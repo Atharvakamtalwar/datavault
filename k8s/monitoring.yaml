@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: datavault-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: datavault-processor
+  endpoints:
+    - port: metrics
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+      - datavault
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: datavault-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: datavault
+      rules:
+        - alert: HighProcessingLatency
+          expr: datavault_processing_latency_seconds > 30
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: High processing latency
+            description: Data processing latency is above 30 seconds
+        - alert: HighErrorRate
+          expr: rate(datavault_processing_errors_total[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: High error rate in data processing
+            description: Error rate is above 10% in the last 5 minutes

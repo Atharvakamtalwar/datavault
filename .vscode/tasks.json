@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install Dependencies",
+      "type": "shell",
+      "command": "pip install -r requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "pytest",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Terraform Init",
+      "type": "shell",
+      "command": "cd infrastructure && terraform init",
+      "problemMatcher": []
+    },
+    {
+      "label": "Terraform Plan",
+      "type": "shell",
+      "command": "cd infrastructure && terraform plan",
+      "problemMatcher": []
+    }
+  ]
+}

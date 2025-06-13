@@ -1,0 +1,124 @@
+name: DataVault Pipeline - CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "DataVault"
+          path: "."
+          format: "HTML"
+          args: >
+            --failOnCVSS 7
+            --enableRetired
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=src --cov-report=xml
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/datavault:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/datavault:latest
+
+  deploy-to-eks:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name datavault-cluster --region us-west-1
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f k8s/
+
+      - name: Update ArgoCD application
+        run: |
+          argocd app set datavault --kustomize-image datavault=${{ secrets.DOCKER_USERNAME }}/datavault:${{ github.sha }}
+
+  monitoring:
+    needs: deploy-to-eks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployment health
+        run: |
+          kubectl get pods -n datavault
+          kubectl get svc -n datavault
+
+      - name: Verify Prometheus metrics
+        run: |
+          kubectl port-forward svc/prometheus-server 9090:9090 -n monitoring &
+          sleep 10
+          curl localhost:9090/api/v1/query?query=up
+
+      - name: Send notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: DataVault Pipeline - Deployment Status
+          body: Deployment completed successfully. Version ${{ github.sha }} is now live.
