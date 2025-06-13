@@ -1,69 +1,93 @@
-# DataVault AWS Data Pipeline
+# DataVault Enterprise Data Pipeline
 
-A secure and scalable data processing pipeline built on AWS for enterprise data storage and processing.
+A comprehensive enterprise-grade data processing pipeline built with AWS services, implementing DevSecOps practices and GitOps deployment methodology.
 
-## Architecture Overview
+## 🚀 Features
 
-This project implements a fully managed, cost-effective data processing pipeline using AWS services:
+- **Real-time Data Processing**: Serverless event-driven architecture
+- **Automated CI/CD Pipeline**: Jenkins, SonarQube, and ArgoCD integration
+- **Security-First Approach**: OWASP, Trivy scanning, and IAM policies
+- **Comprehensive Monitoring**: Prometheus, Grafana, and CloudWatch integration
+- **Infrastructure as Code**: Complete AWS infrastructure using Terraform
+- **Container Orchestration**: EKS-based deployment with autoscaling
+- **GitOps Workflow**: Automated deployments through ArgoCD
 
-- **Amazon S3**: Storage buckets for raw, processed, and archived data
-- **AWS Lambda**: Serverless functions for data processing and transformation
-- **Amazon Kinesis**: Real-time data ingestion and processing
-- **Amazon Redshift**: Data warehousing for analytics
-- **AWS IAM**: Security and access control
-- **Amazon CloudWatch**: Monitoring and alerting
+## 🏗️ Architecture
 
-## Project Structure
+### AWS Services
+- **Storage**: Amazon S3 (Raw, Processed, Archive buckets)
+- **Processing**: AWS Lambda & Kinesis
+- **Analytics**: Amazon Redshift
+- **Security**: AWS IAM & KMS
+- **Monitoring**: CloudWatch
+
+### DevOps Tools
+- **CI/CD**: Jenkins
+- **Security Scanning**: 
+  - OWASP Dependency Check
+  - Trivy Vulnerability Scanner
+- **Code Quality**: SonarQube
+- **Deployment**: ArgoCD
+- **Monitoring**:
+  - Prometheus
+  - Grafana
+  - CloudWatch
+
+## 📁 Project Structure
 
 ```
 .
-├── .github/                    # GitHub related files
-├── infrastructure/            # Terraform IaC files
-│   ├── main.tf               # Main Terraform configuration
-│   ├── variables.tf          # Terraform variables
-│   └── outputs.tf            # Terraform outputs
-├── src/                      # Source code
-│   ├── processors/           # Data processing Lambda functions
-│   ├── utils/               # Utility functions
-│   └── tests/               # Test files
-└── docs/                    # Documentation
+├── .github/                    # GitHub Actions workflows
+├── .vscode/                   # VS Code configurations
+├── docs/                      # Project documentation
+│   ├── technical-documentation.md
+│   └── monitoring-guide.md
+├── infrastructure/            # Terraform configurations
+│   ├── main.tf
+│   └── variables.tf
+├── k8s/                      # Kubernetes manifests
+│   ├── deployment.yaml
+│   ├── monitoring.yaml
+│   └── argocd-app.yaml
+├── src/                      # Application source code
+│   ├── processors/           # Data processing modules
+│   └── tests/               # Test suite
+├── Dockerfile                # Container definition
+├── Jenkinsfile              # CI/CD pipeline
+└── requirements.txt         # Python dependencies
 ```
 
-## Prerequisites
+## 🛠️ Setup Guide
 
-- AWS CLI configured with appropriate credentials
-- Python 3.8+
-- Terraform
-- Docker (optional, for local testing)
+### 1. Infrastructure Setup
 
-## Setup and Deployment
+```bash
+# Configure AWS credentials
+aws configure
 
-1. Clone the repository:
+# Initialize and deploy infrastructure
+cd infrastructure
+terraform init
+terraform apply
+```
 
-   ```bash
-   git clone <repository-url>
-   cd datavault-aws-pipeline
-   ```
+### 2. Jenkins Configuration
 
-2. Install dependencies:
+1. Install Required Plugins:
+   - OWASP Dependency Check
+   - SonarQube Scanner
+   - Docker Pipeline
+   - Kubernetes CLI
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. Configure Credentials:
+   - AWS credentials
+   - Docker registry
+   - GitHub access
+   - SonarQube token
 
-3. Deploy infrastructure:
-
-   ```bash
-   cd infrastructure
-   terraform init
-   terraform apply
-   ```
-
-4. Configure environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your AWS configuration
-   ```
+3. Create Pipeline Jobs:
+   - CI Pipeline (build, test, scan)
+   - CD Pipeline (deploy to EKS)
 
 ## Security
 
